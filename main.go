@@ -34,7 +34,7 @@ func main() {
 
 		//BindJSON會幫我們做三件事:
 		//A. 讀取使用者傳來的JSON
-		//B. 檢查個是正不正確
+		//B. 檢查格式正不正確
 		//C. 把資料塞進去 newItem 變數裡
 		if err := c.ShouldBindJSON(&newItem); err != nil{
 			//如果格式不對(例如傳了字串給 Price)，回傳 400 錯誤

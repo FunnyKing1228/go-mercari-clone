@@ -8,7 +8,7 @@
 - [x] **1.3 RESTful API**: Implement basic CRUD (Create, Read) for items (In-memory)
 
 ### Phase 2: Database & Docker
-- [ ] **2.1 Docker**: Containerize the app using `Dockerfile`
+- [x] **2.1 Docker**: Containerize the app using `Dockerfile`
 - [ ] **2.2 Database**: Setup PostgreSQL using `docker-compose`
 - [ ] **2.3 Persistence**: Connect Go with DB using GORM/sqlx and migrate schema
 

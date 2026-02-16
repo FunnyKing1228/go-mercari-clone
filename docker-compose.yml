@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # 服務 1: 你的 Go 應用程式
+  app:
+    build: .             # 使用當前目錄的 Dockerfile 來建置
+    ports:
+      - "8080:8080"      # 把容器的 8080 對應到電腦的 8080
+    depends_on:
+      - db               # 告訴 Docker: 先啟動資料庫，再啟動我
+    environment:
+      - DB_HOST=db       # 之後 Go 連線資料庫會用到這些變數
+      - DB_USER=mercari
+      - DB_PASSWORD=secret
+      - DB_NAME=mercari_db
+      - DB_PORT=5432
+
+  # 服務 2: PostgreSQL 資料庫
+  db:
+    image: postgres:16-alpine  # 使用官方輕量版 PostgreSQL 16
+    restart: always            # 如果掛掉會自動重啟
+    environment:
+      POSTGRES_USER: mercari
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: mercari_db
+    ports:
+      - "5432:5432"            # 開放 5432 port 讓我們可以用工具連進去檢查
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # 【重要】把資料存在 Volume，這樣重開機資料才不會不見
+
+# 定義一個永久儲存區 (Volume)
+volumes:
+  postgres_data:
