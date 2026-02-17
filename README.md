@@ -9,8 +9,8 @@
 
 ### Phase 2: Database & Docker
 - [x] **2.1 Docker**: Containerize the app using `Dockerfile`
-- [ ] **2.2 Database**: Setup PostgreSQL using `docker-compose`
-- [ ] **2.3 Persistence**: Connect Go with DB using GORM/sqlx and migrate schema
+- [x] **2.2 Database**: Setup PostgreSQL using `docker-compose`
+- [x] **2.3 Persistence**: Connect Go with DB using GORM/sqlx and migrate schema
 
 ### Phase 3: Architecture & Quality
 - [ ] **3.1 Layered Arch**: Refactor code into Router -> Controller -> Service -> Repository

@@ -1,53 +1,92 @@
 package main
 
 import (
+	"log"
 	"net/http"
+	//"os"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
-//1. 定義商品長什麼樣子 (struct)
+// 1. 定義商品結構 (加上 GORM 的 tag)
 type Item struct {
-	ID int `json:"id"`			//把GO的ID轉換成JSON的"id"
-	Name string `json:"name"`	//把GO的Name轉換成JSON的"name"
-	Price int `json:"price"`	//把GO的Price轉換成JSON的"price"
+	gorm.Model
+	Name string `json:"name"`
+	Price int `json:"price"`	
 }
 
-//2. 把items搬到main外面 變成全域變數
-//這樣大家才能一起用它(模擬暫時的資料庫)
-var items = []Item{
-	{ID: 1, Name: "AirPods Pro", Price: 300},
-	{ID: 2, Name: "iPhone 15", Price: 1000},
-	{ID: 3, Name: "Pokemon Card", Price: 50},
-}
+// 全域變數用來存資料庫連線
+var db *gorm.DB
 
 func main() {
-	r := gin.Default()
 
-	//取得所有商品(GET)
+	// 2. 連線到資料庫 (這是新加入的)
+	//我們從環境變數讀取資料庫連線資訊(這些變數在docker-compose.yml裡設定好了)
+	dsn := "host=db user=mercari password=secret dbname=mercari_db port=5432 sslmode=disable TimeZone=Asia/Taipei"
+
+	var err error
+	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		//如果連線線不到資料庫，程式直接掛掉(Panic)，因為沒有DB什麼都做不了
+		log.Fatal("Failed to connect to database:", err)
+	}
+
+
+	// 3. 自動遷移(Auto Migration)
+	// 這行是 GORM 的魔法! 它會看 Item 結構長怎樣，自動去資料庫建立對應的 Table
+	// 如果 Table 已經存在，它會檢查有沒有欄位變更
+	db.AutoMigrate(&Item{})
+
+	r := gin.Default()
+	
+
+	// 4. API實作 (改成操作 DB)
+
+	// GET: 取得所有商品
 	r.GET("/items", func(c *gin.Context){
+		var items []Item
+		
+		// SELECT * FROM items;
+		// 找出所有商品，把結果填入 items slice
+		db.Find(&items)
 		c.JSON(http.StatusOK, gin.H{"items": items})
 	})
 
+	// POST: 新增商品
 	r.POST("/items", func(c *gin.Context){
 		var newItem Item
-
-		//BindJSON會幫我們做三件事:
-		//A. 讀取使用者傳來的JSON
-		//B. 檢查格式正不正確
-		//C. 把資料塞進去 newItem 變數裡
-		if err := c.ShouldBindJSON(&newItem); err != nil{
-			//如果格式不對(例如傳了字串給 Price)，回傳 400 錯誤
+		if err := c.ShouldBindJSON(&newItem) ; err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		
-		//把新商品加入Slice
-		items = append(items, newItem)
+
+		// INSERT INTO items (name, price) VALUES (...);
+		// GORM 會幫我們把 newItem 存進去，並自動生成 ID
+		result := db.Create(&newItem)
+		if result.Error != nil{
+			c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+			return
+		}
 		c.JSON(http.StatusCreated, newItem)
 	})
-	
-	
 
-	r.Run()
+
+	// 為了方便測試，我們再加一個 "取得單一商品" 的API
+	// GET /items/:id (例如 /items/1)
+	r.GET("/items/:id", func(c *gin.Context){
+		id := c.Param("id")
+		var item Item
+		
+		// SELECT * FROM items WHERE id = ? LIMIT 1;
+		// 如果找不到，FIRST 會回傳錯誤
+		if err := db.First(&item, id).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})
+			return
+		}
+		c.JSON(http.StatusOK, item)
+	})
+
+	r.Run() //預設
 }
