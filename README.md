@@ -13,7 +13,7 @@
 - [x] **2.3 Persistence**: Connect Go with DB using GORM/sqlx and migrate schema
 
 ### Phase 3: Architecture & Quality
-- [ ] **3.1 Layered Arch**: Refactor code into Router -> Controller -> Service -> Repository
+- [x] **3.1 Layered Arch**: Refactor code into Router -> Controller -> Service -> Repository
 - [ ] **3.2 Testing**: Add Unit Tests for Service layer (using `testify` or `gomock`)
 - [ ] **3.3 Configuration**: Manage env variables (Viper or Godotenv)
 

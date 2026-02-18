@@ -1,4 +1,4 @@
-module github.com/FunnyKing1228/go-mercari-clone.git
+module github.com/FunnyKing1228/go-mercari-clone
 
 go 1.25.0
 
