@@ -8,12 +8,8 @@ services:
       - "8080:8080"      # 把容器的 8080 對應到電腦的 8080
     depends_on:
       - db               # 告訴 Docker: 先啟動資料庫，再啟動我
-    environment:
-      - DB_HOST=db       # 之後 Go 連線資料庫會用到這些變數
-      - DB_USER=mercari
-      - DB_PASSWORD=secret
-      - DB_NAME=mercari_db
-      - DB_PORT=5432
+    env_file:
+      - .env
 
   # 服務 2: PostgreSQL 資料庫
   db:

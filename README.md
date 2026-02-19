@@ -15,7 +15,7 @@
 ### Phase 3: Architecture & Quality
 - [x] **3.1 Layered Arch**: Refactor code into Router -> Controller -> Service -> Repository
 - [ ] **3.2 Testing**: Add Unit Tests for Service layer (using `testify` or `gomock`)
-- [ ] **3.3 Configuration**: Manage env variables (Viper or Godotenv)
+- [x] **3.3 Configuration**: Manage env variables (Viper or Godotenv)
 
 ### Phase 4: Advanced Features (Mercari-like)
 - [ ] **4.1 Auth**: Implement Signup/Login with JWT
