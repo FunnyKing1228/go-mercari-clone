@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/FunnyKing1228/go-mercari-clone/database"
 	"github.com/FunnyKing1228/go-mercari-clone/controllers"
+	"github.com/FunnyKing1228/go-mercari-clone/repository"
 )
 
 func main() {
@@ -14,7 +15,7 @@ func main() {
 	}
 
 	// 2.初始化 Controller (把 db 丟進去)
-	itemController := controllers.NewItemController(db)
+	itemController := controllers.NewItemController(repository.NewItemRepository(db))
 
 	r := gin.Default()
 
