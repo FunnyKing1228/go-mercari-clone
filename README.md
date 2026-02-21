@@ -14,12 +14,21 @@
 
 ### Phase 3: Architecture & Quality
 - [x] **3.1 Layered Arch**: Refactor code into Router -> Controller -> Service -> Repository
-- [ ] **3.2 Testing**: Add Unit Tests for Service layer (using `testify` or `gomock`)
+- [x] **3.2 Testing**: Add Unit Tests for Service layer (using `testify` or `gomock`)
 - [x] **3.3 Configuration**: Manage env variables (Viper or Godotenv)
 
 ### Phase 4: Advanced Features (Mercari-like)
-- [ ] **4.1 Auth**: Implement Signup/Login with JWT
+- [x] **4.1 Auth**: Implement Signup/Login with JWT
 - [ ] **4.2 Transaction**: Handle concurrent purchases (Database Transaction)
 - [ ] **4.3 Logging**: Implement structured logging
 
+### Phase 5: CI/CD & Real-World Infrastructure
+- [ ] **5.1 CI Pipeline**: Setup GitHub Actions to automate `go test` and code linting on every push
+- [ ] **5.2 Image Upload**: Handle file uploads (multipart/form-data) for item pictures and store them
+- [ ] **5.3 Pagination**: Implement `limit` and `offset` query parameters for `GET /items` to handle large databases
+
+### Phase 6: Full-Stack Integration & Optimization
+- [ ] **6.1 API Docs**: Auto-generate API documentation using Swagger (swaggo) for frontend collaboration
+- [ ] **6.2 Web Frontend**: Build a simple TypeScript/React UI to fetch and display items from the Go API
+- [ ] **6.3 Caching (Bonus)**: Introduce Redis to cache hot items and reduce PostgreSQL load
 ---
