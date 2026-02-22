@@ -19,8 +19,8 @@
 
 ### Phase 4: Advanced Features (Mercari-like)
 - [x] **4.1 Auth**: Implement Signup/Login with JWT
-- [ ] **4.2 Transaction**: Handle concurrent purchases (Database Transaction)
-- [ ] **4.3 Logging**: Implement structured logging
+- [x] **4.2 Transaction**: Handle concurrent purchases (Database Transaction)
+- [x] **4.3 Logging**: Implement structured logging
 
 ### Phase 5: CI/CD & Real-World Infrastructure
 - [ ] **5.1 CI Pipeline**: Setup GitHub Actions to automate `go test` and code linting on every push

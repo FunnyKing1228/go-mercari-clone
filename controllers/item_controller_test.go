@@ -1,14 +1,14 @@
 package controllers
 
 import (
+	"bytes"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"bytes"
 
-	"github.com/gin-gonic/gin"
 	"github.com/FunnyKing1228/go-mercari-clone/models"
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -19,15 +19,23 @@ type MockItemRepository struct {
 }
 
 // 實作合約1: 假的 FindAll (這裡先留空實作，滿足介面即可)
-func (m *MockItemRepository) FindAll() ([]models.Item, error){
+func (m *MockItemRepository) FindAll() ([]models.Item, error) {
 	// m.Called() 會去抓你在測試裡設定好的假資料
 	args := m.Called()
 	return args.Get(0).([]models.Item), args.Error(1)
 }
 
 // 實作合約2: 假的 Create (這裡先留空實作，滿足介面即可)
-func (m *MockItemRepository) Create(item *models.Item) error{
+func (m *MockItemRepository) Create(item *models.Item) error {
 	args := m.Called(item)
+	return args.Error(0)
+}
+
+// 實作合約3: 假的 BuyItem
+func (m *MockItemRepository) BuyItem(itemID uint, userID uint) error {
+	//告訴 mock 套件，這招會接收兩個參數
+	args := m.Called(itemID, userID)
+	//這招只會還傳一個 error，在 args 陣列裡的第 0 個位置
 	return args.Error(0)
 }
 
@@ -56,9 +64,9 @@ func TestItemController_FindAll_Success(t *testing.T) {
 	controller.FindAll(c)
 
 	// 3. 驗證結果 (Assert)
-	assert.Equal(t, http.StatusOK, w.Code) //檢查 HTTP 狀態碼是不是 200
+	assert.Equal(t, http.StatusOK, w.Code)     //檢查 HTTP 狀態碼是不是 200
 	assert.Contains(t, w.Body.String(), "PS5") //檢查回傳的 JSON 裡有沒有 PS5
-	mockRepo.AssertExpectations(t) // 確認 Controller 真的有去呼叫FindAll
+	mockRepo.AssertExpectations(t)             // 確認 Controller 真的有去呼叫FindAll
 }
 
 func TestItemController_FindAll_Error(t *testing.T) {
@@ -101,7 +109,7 @@ func TestItemController_Create_Success(t *testing.T) {
 
 	// 2. 請演員 (Mock) 並發劇本
 	mockRepo := new(MockItemRepository)
-	
+
 	// TODO: 告訴 mockRepo，當有人呼叫 "Create" 且參數不管傳什麼 (mock.Anything) 時，請回傳 nil (代表成功沒錯誤)
 	// 你的程式碼：
 	mockRepo.On("Create", mock.Anything).Return(nil)
@@ -111,14 +119,12 @@ func TestItemController_Create_Success(t *testing.T) {
 	// 你的程式碼：
 	controller := NewItemController(mockRepo)
 
-
 	// ==========================================
 	// 📍 第二部曲：Act (Action！正式開拍)
 	// ==========================================
 	// TODO: 讓 controller 實際去執行 Create 任務 (記得把 c 傳進去)
 	// 你的程式碼：
 	controller.Create(c)
-
 
 	// ==========================================
 	// 📍 第三部曲：Assert (導演看回放驗收)
@@ -144,9 +150,9 @@ func TestItemController_Create_BadInput(t *testing.T) {
 	c.Request, _ = http.NewRequest(http.MethodPost, "/items", bytes.NewBufferString(badJsonBody))
 	c.Request.Header.Set("Content-Type", "application/json")
 
-	// 2. 請演員 (Mock) 
+	// 2. 請演員 (Mock)
 	mockRepo := new(MockItemRepository)
-	
+
 	// 💡 注意：因為我們預期 Controller 會在第一關就擋下爛資料，
 	// 所以這裡我們「不需要」設定 mockRepo.On("Create")... 的劇本！
 	// (因為根本不該走到那一步)
@@ -154,13 +160,12 @@ func TestItemController_Create_BadInput(t *testing.T) {
 	// 3. 依賴注入
 	controller := NewItemController(mockRepo)
 
-
 	// ==========================================
 	// 📍 第二部曲：Act (Action！正式開拍)
 	// ==========================================
 	// TODO: 讓 controller 實際去執行 Create 任務
 	// 你的程式碼：
-    controller.Create(c)
+	controller.Create(c)
 
 	// ==========================================
 	// 📍 第三部曲：Assert (導演看回放驗收)
@@ -168,7 +173,6 @@ func TestItemController_Create_BadInput(t *testing.T) {
 	// TODO: 1. 檢查對客人的反應：因為客人亂傳資料，HTTP 狀態碼應該要是 400 (http.StatusBadRequest)
 	// 你的程式碼：
 	assert.Equal(t, http.StatusBadRequest, c.Writer.Status())
-
 
 	// TODO: 2. 終極抓包：確保 Controller「沒有」笨笨地去呼叫 DB 的 Create！(使用 mockRepo.AssertNotCalled)
 	// 你的程式碼：

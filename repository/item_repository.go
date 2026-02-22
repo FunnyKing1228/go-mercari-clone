@@ -1,28 +1,32 @@
 package repository
 
 import (
+	"errors"
+
 	"github.com/FunnyKing1228/go-mercari-clone/models"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
-//1. 定義介面 (Interface): 這就是合約!
-//不管是真資料還是假資料庫，都必須提供這兩個功能
+// 1. 定義介面 (Interface): 這就是合約!
+// 不管是真資料還是假資料庫，都必須提供這兩個功能
 type ItemRepository interface {
 	FindAll() ([]models.Item, error)
 	Create(item *models.Item) error
+	BuyItem(itemID uint, userID uint) error
 }
 
-//2. 實作真實的 Repository (負責跟 GORM 溝通)
+// 2. 實作真實的 Repository (負責跟 GORM 溝通)
 type itemRepository struct {
 	db *gorm.DB
 }
 
 // 建構子
 func NewItemRepository(db *gorm.DB) ItemRepository {
-	return &itemRepository{db : db}
+	return &itemRepository{db: db}
 }
 
-func (r *itemRepository) FindAll() ([]models.Item, error){
+func (r *itemRepository) FindAll() ([]models.Item, error) {
 	var items []models.Item
 	err := r.db.Find(&items).Error
 	return items, err
@@ -30,4 +34,31 @@ func (r *itemRepository) FindAll() ([]models.Item, error){
 
 func (r *itemRepository) Create(item *models.Item) error {
 	return r.db.Create(item).Error
+}
+
+func (r *itemRepository) BuyItem(itemID uint, userID uint) error {
+	//開啟 GORM 的 Transaction
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		var item models.Item
+
+		//1. 悲觀鎖 (Pessimistic Lock): 使用 FOR UPDATE 鎖定這筆資料
+		//在這個 Transaction 結束前，其他任何想讀取或修改這筆 Item 的請求都會被阻擋等待
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&item, itemID).Error; err != nil {
+			return err //找不到商品
+		}
+
+		//2. 檢查商品狀態
+		if item.Status == "sold" {
+			return errors.New("商品已被買走")
+		}
+
+		//3. 執行購買邏輯 (更新狀態，真實世界還會在這裡建立 Order 訂單邏輯)
+		item.Status = "sold"
+		if err := tx.Save(&item).Error; err != nil {
+			return err //更新失敗，將自動 Rollback
+		}
+
+		//回傳 nil 代表沒有錯誤， GORM 會自動幫我們 Commit 這次的交易
+		return nil
+	})
 }
