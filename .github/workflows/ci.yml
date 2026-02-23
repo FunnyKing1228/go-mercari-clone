@@ -1,0 +1,32 @@
+name: Go CI Pipeline
+
+# 觸發條件：當有人 push 程式碼到 main 分支，或是發起 Pull Request 時啟動
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build-and-test:
+    # 告訴 GitHub：請給我一台最新的 Ubuntu 虛擬機來跑任務
+    runs-on: ubuntu-latest
+
+    steps:
+    # 步驟 1：把你的專案程式碼 clone 到這台虛擬機裡
+    - name: Check out code
+      uses: actions/checkout@v4
+
+    # 步驟 2：在這台虛擬機上安裝 Go 語言環境
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.25' # 確保跟你本機開發的版本一致
+
+    # 步驟 3：嘗試編譯專案 (檢查有沒有語法錯誤)
+    - name: Build Project
+      run: go build -v ./...
+
+    # 步驟 4：執行我們前幾天辛苦寫的單元測試！
+    - name: Run Unit Tests
+      run: go test -v ./...
