@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -22,7 +23,11 @@ func NewItemController(repo repository.ItemRepository) *ItemController {
 // FindAll 對應原本的 GET /items
 func (ctrl *ItemController) FindAll(c *gin.Context) {
 	//改動3: 呼叫 Repo 的方法，Controller 現在根本不知道背後是 Postgres 還是 MySQL
-	items, err := ctrl.Repo.FindAll()
+	limit := 10
+	offset := 0
+	if l := c.Query("limit"); l != "" { if n, _ := strconv.Atoi(l); n > 0 { limit = n } }
+	if o := c.Query("offset"); o != "" { if n, _ := strconv.Atoi(o); n >= 0 { offset = n } }
+	items, err := ctrl.Repo.FindAll(limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -75,4 +80,44 @@ func (ctrl *ItemController) BuyItem(c *gin.Context) {
 	//3. 交易成功
 	c.JSON(http.StatusOK, gin.H{"message": "購買成功!"})
 
+}
+
+func (ctrl *ItemController) UploadImage(c *gin.Context) {
+	//1. 取得商品ID
+	idStr := c.Param("id")
+	itemID, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "無效的商品 ID"})
+		return
+	}
+
+	//2. 從請求中拿出名為 "image" 的檔案
+	file, err := c.FormFile("image")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "找不到上傳的檔案"})
+		return
+	}
+
+	//3. 準備存檔路徑 (我們先在專案目錄下建一個 uploads 資料夾)
+	// 檔名加上 ID 前綴避免重複，例如: 3_my_ps5.jpg
+	fileName := fmt.Sprintf("%d_%s", itemID, file.Filename)
+	dst := "uploads/" + fileName
+
+	//4. 請 Gin 幫我們把檔案存到硬碟裡!
+	if err := c.SaveUploadedFile(file, dst); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "圖片存檔失敗"})
+		return
+	}
+
+	//5. 將圖片網址存入資料庫 (假設我們的圖片網址開頭是 /uploads/)
+	imageURL := "/" + dst
+	if err := ctrl.Repo.UpdateImage(uint(itemID), imageURL); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "更新資料失敗"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":   "圖片上傳成功!",
+		"image_url": imageURL,
+	})
 }

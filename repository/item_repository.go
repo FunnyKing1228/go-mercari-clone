@@ -11,9 +11,10 @@ import (
 // 1. 定義介面 (Interface): 這就是合約!
 // 不管是真資料還是假資料庫，都必須提供這兩個功能
 type ItemRepository interface {
-	FindAll() ([]models.Item, error)
+	FindAll(limit int, offset int) ([]models.Item, error)
 	Create(item *models.Item) error
 	BuyItem(itemID uint, userID uint) error
+	UpdateImage(itemID uint, imageURL string) error
 }
 
 // 2. 實作真實的 Repository (負責跟 GORM 溝通)
@@ -26,9 +27,9 @@ func NewItemRepository(db *gorm.DB) ItemRepository {
 	return &itemRepository{db: db}
 }
 
-func (r *itemRepository) FindAll() ([]models.Item, error) {
+func (r *itemRepository) FindAll(limit int, offset int) ([]models.Item, error) {
 	var items []models.Item
-	err := r.db.Find(&items).Error
+	err := r.db.Limit(limit).Offset(offset).Find(&items).Error
 	return items, err
 }
 
@@ -61,4 +62,9 @@ func (r *itemRepository) BuyItem(itemID uint, userID uint) error {
 		//回傳 nil 代表沒有錯誤， GORM 會自動幫我們 Commit 這次的交易
 		return nil
 	})
+}
+
+func (r *itemRepository) UpdateImage(itemID uint, imageURL string) error {
+	// 告訴 GORM: 去 items 表格，找到對應的 ID，把 image_url 欄位更新
+	return r.db.Model(&models.Item{}).Where("id = ?", itemID).Update("image_url", imageURL).Error
 }

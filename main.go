@@ -34,6 +34,12 @@ func main() {
 	r.POST("/login", controllers.Login)
 	r.GET("/items", itemController.FindAll)
 
+	//1. 【展示櫃】這行很重要：告訴 Gin ，只要網址是 /uploads 開頭，就去硬碟的 ./uploads 資料夾找檔案
+	r.Static("/uploads", "./uploads")
+
+	//先用 Go 內建套件確保 uploads 資料夾存在，免得存檔時報錯 (記得 import "os")
+	os.MkdirAll("uploads", os.ModePerm)
+
 	//建立一個「VIP專區」，把安管 (AuthMiddleware) 派到這個區塊的門口
 	protected := r.Group("/")
 	protected.Use(middlewares.AuthMiddleware()) //啟用安管
@@ -42,6 +48,9 @@ func main() {
 		protected.POST("/items", itemController.Create)
 		//處理購買動作的路由
 		protected.POST("/items/:id/buy", itemController.BuyItem)
+
+		//2. 【收發室】加上上傳圖片的路由 (需要帶手環才能上傳)
+		protected.POST("/items/:id/image", itemController.UploadImage)
 	}
 
 	r.Run() // listen and serve on 0.0.0.0:8080

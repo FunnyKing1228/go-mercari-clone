@@ -18,10 +18,9 @@ type MockItemRepository struct {
 	mock.Mock
 }
 
-// 實作合約1: 假的 FindAll (這裡先留空實作，滿足介面即可)
-func (m *MockItemRepository) FindAll() ([]models.Item, error) {
-	// m.Called() 會去抓你在測試裡設定好的假資料
-	args := m.Called()
+// 實作合約1: 假的 FindAll
+func (m *MockItemRepository) FindAll(limit int, offset int) ([]models.Item, error) {
+	args := m.Called(limit, offset)
 	return args.Get(0).([]models.Item), args.Error(1)
 }
 
@@ -36,6 +35,12 @@ func (m *MockItemRepository) BuyItem(itemID uint, userID uint) error {
 	//告訴 mock 套件，這招會接收兩個參數
 	args := m.Called(itemID, userID)
 	//這招只會還傳一個 error，在 args 陣列裡的第 0 個位置
+	return args.Error(0)
+}
+
+// 實作合約4: 假的 UpdateImage（滿足 ItemRepository 介面）
+func (m *MockItemRepository) UpdateImage(itemID uint, imageURL string) error {
+	args := m.Called(itemID, imageURL)
 	return args.Error(0)
 }
 
@@ -55,7 +60,7 @@ func TestItemController_FindAll_Success(t *testing.T) {
 	//初始化 Mock Repo，並「教」它如何回話
 	mockRepo := new(MockItemRepository)
 	//白話文: 當有人呼叫 FindAll 時，請回傳 mockItems 和 nil(沒錯誤)
-	mockRepo.On("FindAll").Return(mockItems, nil)
+	mockRepo.On("FindAll", mock.Anything, mock.Anything).Return(mockItems, nil)
 
 	//把假 Repo 塞給真 Controller
 	controller := NewItemController(mockRepo)
@@ -81,7 +86,7 @@ func TestItemController_FindAll_Error(t *testing.T) {
 	//3. 訓練 Mock Repo 扮演壞人
 	mockRepo := new(MockItemRepository)
 	//白話文: 當有人呼叫 FindAll 時，回傳空的資料，並丟出一個大錯誤！
-	mockRepo.On("FindAll").Return([]models.Item{}, mockError)
+	mockRepo.On("FindAll", mock.Anything, mock.Anything).Return([]models.Item{}, mockError)
 
 	controller := NewItemController(mockRepo)
 

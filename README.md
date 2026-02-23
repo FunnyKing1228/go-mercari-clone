@@ -23,9 +23,9 @@
 - [x] **4.3 Logging**: Implement structured logging
 
 ### Phase 5: CI/CD & Real-World Infrastructure
-- [ ] **5.1 CI Pipeline**: Setup GitHub Actions to automate `go test` and code linting on every push
-- [ ] **5.2 Image Upload**: Handle file uploads (multipart/form-data) for item pictures and store them
-- [ ] **5.3 Pagination**: Implement `limit` and `offset` query parameters for `GET /items` to handle large databases
+- [x] **5.1 CI Pipeline**: Setup GitHub Actions to automate `go test` and code linting on every push
+- [x] **5.2 Image Upload**: Handle file uploads (multipart/form-data) for item pictures and store them
+- [x] **5.3 Pagination**: Implement `limit` and `offset` query parameters for `GET /items` to handle large databases
 
 ### Phase 6: Full-Stack Integration & Optimization
 - [ ] **6.1 API Docs**: Auto-generate API documentation using Swagger (swaggo) for frontend collaboration
