@@ -1,0 +1,34 @@
+basePath: /
+host: localhost:8080
+info:
+  contact: {}
+  description: 這是一個用 Go 寫的高併發拍賣網站 API 系統，具備 JWT 防護與資料庫悲觀鎖。
+  title: Mercari Clone API
+  version: "1.0"
+paths:
+  /items:
+    get:
+      consumes:
+      - application/json
+      description: 支援 limit 與 offset 分頁功能，取得最新的拍賣商品
+      parameters:
+      - description: 限制回傳筆數 (預設 10)
+        in: query
+        name: limit
+        type: integer
+      - description: 跳過幾筆資料 (預設 0)
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 取得商品列表
+      tags:
+      - items
+swagger: "2.0"

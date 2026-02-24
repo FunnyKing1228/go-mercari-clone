@@ -9,8 +9,18 @@ import (
 	"github.com/FunnyKing1228/go-mercari-clone/middlewares"
 	"github.com/FunnyKing1228/go-mercari-clone/repository"
 	"github.com/gin-gonic/gin"
+
+	//三個 Swagger 必備套件(注意 docs 路徑)
+	_ "github.com/FunnyKing1228/go-mercari-clone/docs"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
+// @title Mercari Clone API
+// @version 1.0
+// @description 這是一個用 Go 寫的高併發拍賣網站 API 系統，具備 JWT 防護與資料庫悲觀鎖。
+// @host localhost:8080
+// @BasePath /
 func main() {
 	//在程式一啟動時，設定 slog 全域使用 JSON 格式輸出
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
@@ -29,6 +39,9 @@ func main() {
 	r := gin.New()
 	r.Use(gin.Recovery())                 // Gin 內建的防崩潰保鏢
 	r.Use(middlewares.StructuredLogger()) // 我們剛剛自己寫的 JSON 紀錄員
+
+	// 註冊 Swagger 專屬網址
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	//註冊登入櫃檯
 	r.POST("/login", controllers.Login)

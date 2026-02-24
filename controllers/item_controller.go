@@ -20,19 +20,44 @@ func NewItemController(repo repository.ItemRepository) *ItemController {
 	return &ItemController{Repo: repo}
 }
 
-// FindAll 對應原本的 GET /items
+// FindAll 取得所有商品
+// @Summary 取得商品列表
+// @Description 支援 limit 與 offset 分頁功能，取得最新的拍賣商品
+// @Tags items
+// @Accept json
+// @Produce json
+// @Param limit query int false "限制回傳筆數 (預設 10)"
+// @Param offset query int false "跳過幾筆資料 (預設 0)"
+// @Success 200 {object} map[string]interface{}
+// @Router /items [get]
 func (ctrl *ItemController) FindAll(c *gin.Context) {
-	//改動3: 呼叫 Repo 的方法，Controller 現在根本不知道背後是 Postgres 還是 MySQL
-	limit := 10
-	offset := 0
-	if l := c.Query("limit"); l != "" { if n, _ := strconv.Atoi(l); n > 0 { limit = n } }
-	if o := c.Query("offset"); o != "" { if n, _ := strconv.Atoi(o); n >= 0 { offset = n } }
+	//1. 抓取limit，預設為 "10" (字串轉數字)
+	limitStr := c.DefaultQuery("limit", "10")
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit <= 0 {
+		limit = 10 //如果亂傳字串或負數，強制設回 10
+	}
+
+	//2. 抓取 offset，預設為 "0"
+	offsetStr := c.DefaultQuery("offset", "0")
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil || offset < 0 {
+		offset = 0 // 如果亂傳字串或負數，強制設回 0
+	}
+
+	//3. 把參數傳給 Repo
 	items, err := ctrl.Repo.FindAll(limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.IndentedJSON(http.StatusOK, gin.H{"items": items})
+
+	// 把目前的 limit 跟 offset 也一起回傳，方便前端製作「下一頁」按鈕
+	c.IndentedJSON(http.StatusOK, gin.H{
+		"limit":  limit,
+		"offset": offset,
+		"items":  items,
+	})
 }
 
 // Create 也要修改 把ctrl.DB.Create 改成 ctrl.Repo.Create
