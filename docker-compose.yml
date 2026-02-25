@@ -22,6 +22,16 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data # 【重要】把資料存在 Volume，這樣重開機資料才不會不見
 
+  # Redis 區塊
+  redis:
+    image: redis:7-alpine
+    container_name: mercari_redis
+    ports:
+      - "6379:6379" # Redis 預設 port
+    volumes:
+      - redis_data:/data # 讓 Redis 就算重啟，快取也不會馬上消失
+
 # 定義一個永久儲存區 (Volume)
 volumes:
   postgres_data:
+  redis_data:

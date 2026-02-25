@@ -32,6 +32,9 @@ func main() {
 		panic("Failed to connect to database!")
 	}
 
+	// 喚醒並連線 Redis
+	database.ConnectRedis()
+
 	// 2.初始化 Controller (把 db 丟進去)
 	itemController := controllers.NewItemController(repository.NewItemRepository(db))
 

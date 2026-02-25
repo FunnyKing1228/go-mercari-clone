@@ -1,10 +1,13 @@
 package controllers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
+	"github.com/FunnyKing1228/go-mercari-clone/database"
 	"github.com/FunnyKing1228/go-mercari-clone/models"
 	"github.com/FunnyKing1228/go-mercari-clone/repository"
 	"github.com/gin-gonic/gin"
@@ -31,29 +34,57 @@ func NewItemController(repo repository.ItemRepository) *ItemController {
 // @Success 200 {object} map[string]interface{}
 // @Router /items [get]
 func (ctrl *ItemController) FindAll(c *gin.Context) {
-	//1. 抓取limit，預設為 "10" (字串轉數字)
 	limitStr := c.DefaultQuery("limit", "10")
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil || limit <= 0 {
-		limit = 10 //如果亂傳字串或負數，強制設回 10
+	limit, _ := strconv.Atoi(limitStr)
+	if limit <= 0 {
+		limit = 10
 	}
 
-	//2. 抓取 offset，預設為 "0"
 	offsetStr := c.DefaultQuery("offset", "0")
-	offset, err := strconv.Atoi(offsetStr)
-	if err != nil || offset < 0 {
-		offset = 0 // 如果亂傳字串或負數，強制設回 0
+	offset, _ := strconv.Atoi(offsetStr)
+	if offset < 0 {
+		offset = 0
 	}
 
-	//3. 把參數傳給 Repo
+	// 1. 如果有設定 Redis，先嘗試從快取讀資料
+	var items []models.Item
+	if database.RedisClient != nil {
+		cacheKey := fmt.Sprintf("items:limit:%d:offset:%d", limit, offset)
+
+		if cachedData, err := database.RedisClient.Get(database.Ctx, cacheKey).Result(); err == nil {
+			// Cache Hit
+			if err := json.Unmarshal([]byte(cachedData), &items); err == nil {
+				fmt.Println("[極速] 從 Redis 快取取得資料!")
+				c.IndentedJSON(http.StatusOK, gin.H{
+					"source": "redis",
+					"limit":  limit,
+					"offset": offset,
+					"items":  items,
+				})
+				return
+			}
+		}
+	}
+
+	// 2. Cache Miss 或沒有 Redis → 從資料庫撈
+	fmt.Println("[緩慢] 從 PostgreSQL 撈取資料...")
 	items, err := ctrl.Repo.FindAll(limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// 把目前的 limit 跟 offset 也一起回傳，方便前端製作「下一頁」按鈕
+	// 3. 把結果寫回 Redis（如果有啟用）
+	if database.RedisClient != nil {
+		cacheKey := fmt.Sprintf("items:limit:%d:offset:%d", limit, offset)
+		if itemsJSON, err := json.Marshal(items); err == nil {
+			database.RedisClient.Set(database.Ctx, cacheKey, itemsJSON, 60*time.Second)
+		}
+	}
+
+	// 4. 回傳資料給客戶端
 	c.IndentedJSON(http.StatusOK, gin.H{
+		"source": "database",
 		"limit":  limit,
 		"offset": offset,
 		"items":  items,
