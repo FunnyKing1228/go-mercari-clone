@@ -1,4 +1,7 @@
 basePath: /
+definitions:
+  models.Item:
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -31,4 +34,58 @@ paths:
       summary: 取得商品列表
       tags:
       - items
+    post:
+      consumes:
+      - application/json
+      description: 建立一個新的商品並存入資料庫
+      parameters:
+      - description: 商品資料 (填寫 name 和 price 即可)
+        in: body
+        name: item
+        required: true
+        schema:
+          $ref: '#/definitions/models.Item'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Item'
+      security:
+      - BearerAuth: []
+      summary: 新增拍賣商品
+      tags:
+      - items
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: 隨便輸入帳密來換取 JWT Token
+      parameters:
+      - description: 請輸入帳號與密碼，格式如右
+        in: body
+        name: body
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 登入系統取得手環
+      tags:
+      - auth
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

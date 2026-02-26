@@ -13,7 +13,15 @@ type LoginRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
-// 2. 登入櫃台的處理邏輯
+// Login 登入拿取 Token
+// @Summary 登入系統取得手環
+// @Description 隨便輸入帳密來換取 JWT Token
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param body body map[string]string true "請輸入帳號與密碼，格式如右"
+// @Success 200 {object} map[string]string
+// @Router /login [post]
 func Login(c *gin.Context) {
 	var req LoginRequest
 

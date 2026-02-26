@@ -91,7 +91,16 @@ func (ctrl *ItemController) FindAll(c *gin.Context) {
 	})
 }
 
-// Create 也要修改 把ctrl.DB.Create 改成 ctrl.Repo.Create
+// Create 新增商品
+// @Summary 新增拍賣商品
+// @Description 建立一個新的商品並存入資料庫
+// @Tags items
+// @Accept json
+// @Produce json
+// @Param item body models.Item true "商品資料 (填寫 name 和 price 即可)"
+// @Success 201 {object} models.Item
+// @Security BearerAuth
+// @Router /items [post]
 func (ctrl *ItemController) Create(c *gin.Context) {
 	var newItem models.Item
 	if err := c.ShouldBindJSON(&newItem); err != nil {

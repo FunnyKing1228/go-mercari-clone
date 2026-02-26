@@ -29,6 +29,6 @@
 
 ### Phase 6: Full-Stack Integration & Optimization
 - [x] **6.1 API Docs**: Auto-generate API documentation using Swagger (swaggo) for frontend collaboration
-- [ ] **6.2 Web Frontend**: Build a simple TypeScript/React UI to fetch and display items from the Go API
-- [ ] **6.3 Caching (Bonus)**: Introduce Redis to cache hot items and reduce PostgreSQL load
+- [x] **6.2 Web Frontend**: Build a simple TypeScript/React UI to fetch and display items from the Go API
+- [x] **6.3 Caching (Bonus)**: Introduce Redis to cache hot items and reduce PostgreSQL load
 ---
