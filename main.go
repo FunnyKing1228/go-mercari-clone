@@ -61,6 +61,7 @@ func main() {
 
 	//註冊登入櫃檯
 	r.POST("/login", controllers.Login)
+	r.POST("/register", controllers.Register)
 	r.GET("/items", itemController.FindAll)
 
 	//1. 【展示櫃】這行很重要：告訴 Gin ，只要網址是 /uploads 開頭，就去硬碟的 ./uploads 資料夾找檔案

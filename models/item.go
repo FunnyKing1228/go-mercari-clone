@@ -2,9 +2,9 @@ package models
 
 import "gorm.io/gorm"
 
-// 2. Item 結構定義 (跟原來一樣)
 type Item struct {
-	gorm.Model
+	// gorm.Model 只在資料庫層使用，Swagger 不需要知道這些欄位
+	gorm.Model `swaggerignore:"true"`
 	Name     string `json:"name"`
 	Price    int    `json:"price"`
 	Status   string `json:"status" gorm:"default:'available'"` // available, sold, deleted (刪除狀態)

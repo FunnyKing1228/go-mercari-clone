@@ -1,6 +1,43 @@
 basePath: /
 definitions:
+  controllers.LoginInput:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  controllers.RegisterInput:
+    properties:
+      email:
+        description: 必填，且必須符合 Email 格式!
+        type: string
+      password:
+        description: 必填，且密碼至少要 6 個字!
+        minLength: 6
+        type: string
+      username:
+        description: 必填
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
   models.Item:
+    properties:
+      image_url:
+        type: string
+      name:
+        type: string
+      price:
+        type: integer
+      status:
+        description: available, sold, deleted (刪除狀態)
+        type: string
     type: object
 host: localhost:8080
 info:
@@ -61,16 +98,14 @@ paths:
     post:
       consumes:
       - application/json
-      description: 隨便輸入帳密來換取 JWT Token
+      description: 輸入註冊過的帳號密碼來換取 JWT Token
       parameters:
-      - description: 請輸入帳號與密碼，格式如右
+      - description: 請輸入帳號與密碼
         in: body
-        name: body
+        name: input
         required: true
         schema:
-          additionalProperties:
-            type: string
-          type: object
+          $ref: '#/definitions/controllers.LoginInput'
       produces:
       - application/json
       responses:
@@ -81,6 +116,30 @@ paths:
               type: string
             type: object
       summary: 登入系統取得手環
+      tags:
+      - auth
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: 建立一組新的帳號密碼，密碼將會被 bcrypt 演算法單向加密
+      parameters:
+      - description: 註冊資料 (需包含 email 與至少 6 碼的密碼)
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.RegisterInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 註冊新帳號
       tags:
       - auth
 securityDefinitions:

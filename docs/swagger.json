@@ -86,7 +86,7 @@
         },
         "/login": {
             "post": {
-                "description": "隨便輸入帳密來換取 JWT Token",
+                "description": "輸入註冊過的帳號密碼來換取 JWT Token",
                 "consumes": [
                     "application/json"
                 ],
@@ -99,15 +99,12 @@
                 "summary": "登入系統取得手環",
                 "parameters": [
                     {
-                        "description": "請輸入帳號與密碼，格式如右",
-                        "name": "body",
+                        "description": "請輸入帳號與密碼",
+                        "name": "input",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/controllers.LoginInput"
                         }
                     }
                 ],
@@ -123,11 +120,101 @@
                     }
                 }
             }
+        },
+        "/register": {
+            "post": {
+                "description": "建立一組新的帳號密碼，密碼將會被 bcrypt 演算法單向加密",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "註冊新帳號",
+                "parameters": [
+                    {
+                        "description": "註冊資料 (需包含 email 與至少 6 碼的密碼)",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controllers.RegisterInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "controllers.LoginInput": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "controllers.RegisterInput": {
+            "type": "object",
+            "required": [
+                "email",
+                "password",
+                "username"
+            ],
+            "properties": {
+                "email": {
+                    "description": "必填，且必須符合 Email 格式!",
+                    "type": "string"
+                },
+                "password": {
+                    "description": "必填，且密碼至少要 6 個字!",
+                    "type": "string",
+                    "minLength": 6
+                },
+                "username": {
+                    "description": "必填",
+                    "type": "string"
+                }
+            }
+        },
         "models.Item": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "image_url": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "available, sold, deleted (刪除狀態)",
+                    "type": "string"
+                }
+            }
         }
     },
     "securityDefinitions": {
