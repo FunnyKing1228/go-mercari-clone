@@ -112,6 +112,8 @@ func TestItemController_Create_Success(t *testing.T) {
 	c.Request, _ = http.NewRequest(http.MethodPost, "/items", bytes.NewBufferString(jsonBody))
 	c.Request.Header.Set("Content-Type", "application/json")
 
+	c.Set("userID", uint(1))
+
 	// 2. 請演員 (Mock) 並發劇本
 	mockRepo := new(MockItemRepository)
 
