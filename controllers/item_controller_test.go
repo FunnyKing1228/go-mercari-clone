@@ -19,8 +19,8 @@ type MockItemRepository struct {
 }
 
 // 實作合約1: 假的 FindAll
-func (m *MockItemRepository) FindAll(limit int, offset int) ([]models.Item, error) {
-	args := m.Called(limit, offset)
+func (m *MockItemRepository) FindAll(limit int, offset int, search string) ([]models.Item, error) {
+	args := m.Called(limit, offset, search)
 	return args.Get(0).([]models.Item), args.Error(1)
 }
 
@@ -60,7 +60,7 @@ func TestItemController_FindAll_Success(t *testing.T) {
 	//初始化 Mock Repo，並「教」它如何回話
 	mockRepo := new(MockItemRepository)
 	//白話文: 當有人呼叫 FindAll 時，請回傳 mockItems 和 nil(沒錯誤)
-	mockRepo.On("FindAll", mock.Anything, mock.Anything).Return(mockItems, nil)
+	mockRepo.On("FindAll", mock.Anything, mock.Anything, mock.Anything).Return(mockItems, nil)
 
 	//把假 Repo 塞給真 Controller
 	controller := NewItemController(mockRepo)
@@ -86,7 +86,7 @@ func TestItemController_FindAll_Error(t *testing.T) {
 	//3. 訓練 Mock Repo 扮演壞人
 	mockRepo := new(MockItemRepository)
 	//白話文: 當有人呼叫 FindAll 時，回傳空的資料，並丟出一個大錯誤！
-	mockRepo.On("FindAll", mock.Anything, mock.Anything).Return([]models.Item{}, mockError)
+	mockRepo.On("FindAll", mock.Anything, mock.Anything, mock.Anything).Return([]models.Item{}, mockError)
 
 	controller := NewItemController(mockRepo)
 

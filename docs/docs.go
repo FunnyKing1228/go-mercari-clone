@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/items": {
             "get": {
-                "description": "支援 limit 與 offset 分頁功能，取得最新的拍賣商品",
+                "description": "支援 limit, offset 分頁與 search 關鍵字搜尋",
                 "consumes": [
                     "application/json"
                 ],
@@ -40,6 +40,12 @@ const docTemplate = `{
                         "description": "跳過幾筆資料 (預設 0)",
                         "name": "offset",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "關鍵字搜尋 (例如: PS5)",
+                        "name": "search",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -58,7 +64,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "建立一個新的商品並存入資料庫",
+                "description": "建立一個新的商品並存入資料庫，會自動綁定發送請求的賣家身分",
                 "consumes": [
                     "application/json"
                 ],
@@ -205,22 +211,7 @@ const docTemplate = `{
             }
         },
         "models.Item": {
-            "type": "object",
-            "properties": {
-                "image_url": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "price": {
-                    "type": "integer"
-                },
-                "status": {
-                    "description": "available, sold, deleted (刪除狀態)",
-                    "type": "string"
-                }
-            }
+            "type": "object"
         }
     },
     "securityDefinitions": {

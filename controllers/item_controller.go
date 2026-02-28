@@ -25,12 +25,13 @@ func NewItemController(repo repository.ItemRepository) *ItemController {
 
 // FindAll 取得所有商品
 // @Summary 取得商品列表
-// @Description 支援 limit 與 offset 分頁功能，取得最新的拍賣商品
+// @Description 支援 limit, offset 分頁與 search 關鍵字搜尋
 // @Tags items
 // @Accept json
 // @Produce json
 // @Param limit query int false "限制回傳筆數 (預設 10)"
 // @Param offset query int false "跳過幾筆資料 (預設 0)"
+// @Param search query string false "關鍵字搜尋 (例如: PS5)"
 // @Success 200 {object} map[string]interface{}
 // @Router /items [get]
 func (ctrl *ItemController) FindAll(c *gin.Context) {
@@ -46,19 +47,22 @@ func (ctrl *ItemController) FindAll(c *gin.Context) {
 		offset = 0
 	}
 
-	// 1. 如果有設定 Redis，先嘗試從快取讀資料
+	// 👇 新增：取得網址列上的 search 參數 (例如 /items?search=ps5)
+	search := c.Query("search")
+
 	var items []models.Item
 	if database.RedisClient != nil {
-		cacheKey := fmt.Sprintf("items:limit:%d:offset:%d", limit, offset)
+		// 👇 重要改動：把 search 字串也加入 Redis 的 Key 裡面！
+		cacheKey := fmt.Sprintf("items:limit:%d:offset:%d:search:%s", limit, offset, search)
 
 		if cachedData, err := database.RedisClient.Get(database.Ctx, cacheKey).Result(); err == nil {
-			// Cache Hit
 			if err := json.Unmarshal([]byte(cachedData), &items); err == nil {
 				fmt.Println("[極速] 從 Redis 快取取得資料!")
 				c.IndentedJSON(http.StatusOK, gin.H{
 					"source": "redis",
 					"limit":  limit,
 					"offset": offset,
+					"search": search, // 回傳告訴前端現在搜了什麼
 					"items":  items,
 				})
 				return
@@ -66,34 +70,33 @@ func (ctrl *ItemController) FindAll(c *gin.Context) {
 		}
 	}
 
-	// 2. Cache Miss 或沒有 Redis → 從資料庫撈
 	fmt.Println("[緩慢] 從 PostgreSQL 撈取資料...")
-	items, err := ctrl.Repo.FindAll(limit, offset)
+	// 👇 修改：把 search 傳進 Repo 裡
+	items, err := ctrl.Repo.FindAll(limit, offset, search)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// 3. 把結果寫回 Redis（如果有啟用）
 	if database.RedisClient != nil {
-		cacheKey := fmt.Sprintf("items:limit:%d:offset:%d", limit, offset)
+		cacheKey := fmt.Sprintf("items:limit:%d:offset:%d:search:%s", limit, offset, search)
 		if itemsJSON, err := json.Marshal(items); err == nil {
 			database.RedisClient.Set(database.Ctx, cacheKey, itemsJSON, 60*time.Second)
 		}
 	}
 
-	// 4. 回傳資料給客戶端
 	c.IndentedJSON(http.StatusOK, gin.H{
 		"source": "database",
 		"limit":  limit,
 		"offset": offset,
+		"search": search,
 		"items":  items,
 	})
 }
 
 // Create 新增商品
 // @Summary 新增拍賣商品
-// @Description 建立一個新的商品並存入資料庫
+// @Description 建立一個新的商品並存入資料庫，會自動綁定發送請求的賣家身分
 // @Tags items
 // @Accept json
 // @Produce json
@@ -107,6 +110,28 @@ func (ctrl *ItemController) Create(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	// --- 👇 核心改動：從 JWT 驗證通過的 Context 中取出 user_id ---
+	// 註：這裡的 "userID" 字串，必須與你 AuthMiddleware 裡 c.Set("xxx", id) 的 key 一致！
+	rawUserID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "找不到使用者身分，請確認 Token 是否有效"})
+		return
+	}
+
+	// 安全的型別轉換 (因為 JWT 解析完的數字很常變成 float64)
+	switch v := rawUserID.(type) {
+	case float64:
+		newItem.UserID = uint(v)
+	case uint:
+		newItem.UserID = v
+	case int:
+		newItem.UserID = uint(v)
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "身分驗證資料型別異常"})
+		return
+	}
+	// -----------------------------------------------------------
 
 	if err := ctrl.Repo.Create(&newItem); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

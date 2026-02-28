@@ -1,11 +1,12 @@
 package middlewares
 
 import (
-		"net/http"
-		"strings"
+	"net/http"
+	"strings"
 
-		"github.com/FunnyKing1228/go-mercari-clone/utils"
-		"github.com/gin-gonic/gin"
+	"github.com/FunnyKing1228/go-mercari-clone/utils"
+	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // AuthMiddleware 就是我們的夜店安管
@@ -32,6 +33,23 @@ func AuthMiddleware() gin.HandlerFunc {
 		token, err := utils.VerifyToken(tokenString)
 		if err != nil || !token.Valid {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "手環是假的或已過期！安管踢人！"})
+			c.Abort()
+			return
+		}
+
+		// 安管把手環裡面的身分資訊抄下來，貼在客人背上(Context)
+		if claims, ok := token.Claims.(jwt.MapClaims); ok {
+			// 記得你之前解碼出的 Payload 裡有 "user_id" 嗎？就是拿這個！
+			if userID, exists := claims["user_id"]; exists {
+				// c.Set 會把資料跟著這個 Request 一路傳遞下去給 Controller
+				c.Set("userID", userID)
+			} else {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "手環裡面沒有紀錄身分資訊！"})
+				c.Abort()
+				return
+			}
+		} else {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "無法解析手環資訊！"})
 			c.Abort()
 			return
 		}

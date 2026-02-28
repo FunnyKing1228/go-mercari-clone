@@ -34,8 +34,8 @@
 
 ### Phase 7: Core Business Logic & Relational Data
 - [x] **7.1 Real User System**: Implement true user registration and secure passwords using `bcrypt` hashing
-- [ ] **7.2 Relational DB**: Use GORM Preload to establish One-to-Many relationships (e.g., link an `Item` to a specific `User` as the seller)
-- [ ] **7.3 Advanced Search**: Implement keyword search and category filtering in the `GET /items` API
+- [x] **7.2 Relational DB**: Use GORM Preload to establish One-to-Many relationships (e.g., link an `Item` to a specific `User` as the seller)
+- [x] **7.3 Advanced Search**: Implement keyword search and category filtering in the `GET /items` API
 
 ### Phase 8: Production Readiness & Load Testing
 - [ ] **8.1 Frontend Containerization**: Write a Dockerfile for the React app and integrate it into the `docker-compose` network

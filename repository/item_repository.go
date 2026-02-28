@@ -11,7 +11,7 @@ import (
 // 1. 定義介面 (Interface): 這就是合約!
 // 不管是真資料還是假資料庫，都必須提供這兩個功能
 type ItemRepository interface {
-	FindAll(limit int, offset int) ([]models.Item, error)
+	FindAll(limit int, offset int, search string) ([]models.Item, error)
 	Create(item *models.Item) error
 	BuyItem(itemID uint, userID uint) error
 	UpdateImage(itemID uint, imageURL string) error
@@ -27,9 +27,20 @@ func NewItemRepository(db *gorm.DB) ItemRepository {
 	return &itemRepository{db: db}
 }
 
-func (r *itemRepository) FindAll(limit int, offset int) ([]models.Item, error) {
+func (r *itemRepository) FindAll(limit int, offset int, search string) ([]models.Item, error) {
 	var items []models.Item
-	err := r.db.Limit(limit).Offset(offset).Find(&items).Error
+
+	// 1. 先建立一個包含賣家資訊的基礎查詢
+	query := r.db.Preload("User")
+
+	// 2. 如果有傳入搜尋字串，就疊加模糊搜尋條件 (% 代表前後可以有任何字元)
+	if search != "" {
+		query = query.Where("name ILIKE ?", "%"+search+"%")
+	}
+
+	// 3. 最後加上分頁限制，並執行查詢
+	err := query.Limit(limit).Offset(offset).Find(&items).Error
+
 	return items, err
 }
 

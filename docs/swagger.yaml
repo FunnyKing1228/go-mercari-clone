@@ -28,16 +28,6 @@ definitions:
     - username
     type: object
   models.Item:
-    properties:
-      image_url:
-        type: string
-      name:
-        type: string
-      price:
-        type: integer
-      status:
-        description: available, sold, deleted (刪除狀態)
-        type: string
     type: object
 host: localhost:8080
 info:
@@ -50,7 +40,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: 支援 limit 與 offset 分頁功能，取得最新的拍賣商品
+      description: 支援 limit, offset 分頁與 search 關鍵字搜尋
       parameters:
       - description: 限制回傳筆數 (預設 10)
         in: query
@@ -60,6 +50,10 @@ paths:
         in: query
         name: offset
         type: integer
+      - description: '關鍵字搜尋 (例如: PS5)'
+        in: query
+        name: search
+        type: string
       produces:
       - application/json
       responses:
@@ -74,7 +68,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: 建立一個新的商品並存入資料庫
+      description: 建立一個新的商品並存入資料庫，會自動綁定發送請求的賣家身分
       parameters:
       - description: 商品資料 (填寫 name 和 price 即可)
         in: body
