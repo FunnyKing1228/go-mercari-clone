@@ -2,7 +2,9 @@ package database
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
+	"time"
 
 	"github.com/FunnyKing1228/go-mercari-clone/models"
 	"gorm.io/driver/postgres"
@@ -34,9 +36,36 @@ func Connect() (*gorm.DB, error) {
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Taipei",
 		host, user, password, dbname, port)
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		return nil, err
+	// db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	var db *gorm.DB
+	var err error
+
+	// === 加入自動重試機制 ===
+	maxRetries := 5 // 最大重試次數
+	for i := 1; i <= maxRetries; i++ {
+		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		
+		if err == nil {
+			slog.Info("Successfully connected to database", "host", host, "db", dbname)
+			break
+		}
+
+		if i == maxRetries {
+			slog.Error("Failed to connect to database after maximum retries", "error", err)
+			return nil, err
+		}
+
+		slog.Warn("Database connection failed, retrying...", 
+			"retry", i, 
+			"max_retries", maxRetries, 
+			"wait_seconds", 5,
+			"error", err,
+		)
+		time.Sleep(5 * time.Second) // 等待 5 秒後再試
 	}
 
 	// 把連線成功的區域變數 db，指派給剛剛宣告的公開變數 DB
@@ -44,7 +73,8 @@ func Connect() (*gorm.DB, error) {
 
 	//自動遷移(Auto Migration)搬來這裡做
 	//因為這裡引用了 models.Item，所以上面要 import models
-	db.AutoMigrate(&models.Item{}, &models.User{})
+	// db.AutoMigrate(&models.Item{}, &models.User{})
+	err = db.AutoMigrate(&models.Item{}, &models.User{})
 	if err != nil {
 		return nil, err
 	}
