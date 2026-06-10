@@ -1,51 +1,194 @@
-## 🗺️ Learning Roadmap & Progress
+# Go Mercari Clone
 
-這是一個為了熟悉 Go Backend 生態系與 Mercari 技術堆疊而建立的實戰專案。
+A backend-focused marketplace API inspired by Mercari, built with Go, Gin, PostgreSQL, Redis, JWT authentication, and Docker Compose.
 
-### Phase 1: HTTP Basics & Framework
-- [x] **1.1 Web Server**: Setup Gin framework and implement `GET /ping`
-- [x] **1.2 Data Struct**: Define `Item` struct with JSON tags
-- [x] **1.3 RESTful API**: Implement basic CRUD (Create, Read) for items (In-memory)
+This project demonstrates practical backend engineering topics for an e-commerce style product: user authentication, item listing, seller ownership, image upload, search and pagination, Redis caching, structured logging, Swagger API documentation, and transaction-safe purchasing with PostgreSQL row locking.
 
-### Phase 2: Database & Docker
-- [x] **2.1 Docker**: Containerize the app using `Dockerfile`
-- [x] **2.2 Database**: Setup PostgreSQL using `docker-compose`
-- [x] **2.3 Persistence**: Connect Go with DB using GORM/sqlx and migrate schema
+The repository also includes a lightweight React/Vite client for local API demo purposes.
 
-### Phase 3: Architecture & Quality
-- [x] **3.1 Layered Arch**: Refactor code into Router -> Controller -> Service -> Repository
-- [x] **3.2 Testing**: Add Unit Tests for Service layer (using `testify` or `gomock`)
-- [x] **3.3 Configuration**: Manage env variables (Viper or Godotenv)
+## Highlights
 
-### Phase 4: Advanced Features (Mercari-like)
-- [x] **4.1 Auth**: Implement Signup/Login with JWT
-- [x] **4.2 Transaction**: Handle concurrent purchases (Database Transaction)
-- [x] **4.3 Logging**: Implement structured logging
+- JWT-based registration and login flow with bcrypt password hashing.
+- PostgreSQL persistence through GORM models and repositories.
+- Redis cache-aside implementation for item list queries.
+- Transaction-safe item purchase using `SELECT ... FOR UPDATE` via GORM row locking.
+- Layered backend structure with controllers, repositories, models, middleware, and database packages.
+- Multipart image upload support with static file serving from `/uploads`.
+- Swagger documentation generated with `swaggo`.
+- JSON structured request logging using Go `slog`.
+- GitHub Actions CI for build and test checks.
+- React/Vite demo frontend for browsing items from the API.
 
-### Phase 5: CI/CD & Real-World Infrastructure
-- [x] **5.1 CI Pipeline**: Setup GitHub Actions to automate `go test` and code linting on every push
-- [x] **5.2 Image Upload**: Handle file uploads (multipart/form-data) for item pictures and store them
-- [x] **5.3 Pagination**: Implement `limit` and `offset` query parameters for `GET /items` to handle large databases
+## Tech Stack
 
-### Phase 6: Full-Stack Integration & Optimization
-- [x] **6.1 API Docs**: Auto-generate API documentation using Swagger (swaggo) for frontend collaboration
-- [x] **6.2 Web Frontend**: Build a simple TypeScript/React UI to fetch and display items from the Go API
-- [x] **6.3 Caching (Bonus)**: Introduce Redis to cache hot items and reduce PostgreSQL load
+| Area | Tools |
+| --- | --- |
+| Backend | Go, Gin |
+| Database | PostgreSQL, GORM |
+| Cache | Redis |
+| Auth | JWT, bcrypt |
+| API Docs | Swagger, swaggo |
+| Testing | Go testing, testify |
+| DevOps | Docker, Docker Compose, GitHub Actions |
+| Frontend demo | React, TypeScript, Vite |
 
-### Phase 7: Core Business Logic & Relational Data
-- [x] **7.1 Real User System**: Implement true user registration and secure passwords using `bcrypt` hashing
-- [x] **7.2 Relational DB**: Use GORM Preload to establish One-to-Many relationships (e.g., link an `Item` to a specific `User` as the seller)
-- [x] **7.3 Advanced Search**: Implement keyword search and category filtering in the `GET /items` API
+## Architecture
 
-### Phase 8: Production Readiness & Load Testing
-- [ ] **8.1 Frontend Containerization**: Write a Dockerfile for the React app and integrate it into the `docker-compose` network
-- [ ] **8.2 Load Testing**: Introduce load testing tools (e.g., `k6` or `JMeter`) to simulate high concurrency and stress test the API
-- [ ] **8.3 Performance Tuning**: Analyze bottlenecks from load tests and optimize database queries or Redis caching strategies
+```mermaid
+flowchart LR
+    client["Client / React demo"] --> router["Gin router"]
+    router --> middleware["Middleware: logging, auth"]
+    middleware --> controller["Controllers"]
+    controller --> repository["Repositories"]
+    repository --> postgres["PostgreSQL"]
+    controller --> redis["Redis cache"]
+    controller --> uploads["Local uploads directory"]
+```
 
----
-### 🎓 Final Challenge: Architecture Deep Dive & Interview Prep
-*(This is a conceptual validation phase, focusing on explaining the "Why" behind the code for Tier-1 tech interviews.)*
-- [ ] **Concurrency Control**: Explain the mechanism of `FOR UPDATE` (Pessimistic Lock) and how it prevents race conditions in e-commerce.
-- [ ] **Caching Strategy**: Defend the choice of the Cache-Aside pattern with Redis and explain how to handle cache invalidation and stale data.
-- [ ] **Security & Auth**: Articulate the flow of JWT authentication and why it is chosen over stateful session cookies.
----
+The backend keeps HTTP handling, persistence, authentication, and infrastructure concerns separated:
+
+- `main.go` wires the application together, configures middleware, registers routes, and starts the server.
+- `controllers/` translates HTTP requests into application actions and JSON responses.
+- `repository/` owns database access and transaction logic.
+- `models/` defines GORM entities and JSON shapes.
+- `middlewares/` handles cross-cutting behavior such as JWT verification and structured request logs.
+- `database/` initializes PostgreSQL and Redis clients.
+- `utils/` contains shared helpers such as JWT generation and verification.
+- `frontend/` contains a simple React client used to display marketplace items.
+
+For a deeper walkthrough, see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+## Features
+
+### Authentication
+
+- `POST /register` creates a user with a bcrypt-hashed password.
+- `POST /login` verifies credentials and returns a JWT.
+- Protected routes require `Authorization: Bearer <token>`.
+
+### Marketplace Items
+
+- `GET /items` lists items with pagination and keyword search.
+- `POST /items` creates a new item for the authenticated user.
+- `POST /items/:id/buy` purchases an item inside a database transaction.
+- `POST /items/:id/image` uploads and links an image to an item.
+
+### Caching
+
+`GET /items` uses Redis as a cache-aside layer. Query parameters such as `limit`, `offset`, and `search` are included in the cache key to avoid returning mismatched result sets.
+
+### Concurrency Control
+
+The purchase flow locks the selected item row during the transaction. This prevents two buyers from successfully purchasing the same item at the same time.
+
+## Getting Started
+
+### Prerequisites
+
+- Go 1.25+
+- Docker and Docker Compose
+- Node.js and npm, only if you want to run the React demo
+
+### 1. Configure environment variables
+
+Create a local `.env` from the example file:
+
+```bash
+cp .env.example .env
+```
+
+Use `DB_HOST=localhost` when running the Go API directly on your machine with PostgreSQL running in Docker. Use `DB_HOST=db` when running the Go API inside Docker Compose.
+
+### 2. Start PostgreSQL and Redis
+
+```bash
+docker compose up -d db redis
+```
+
+### 3. Run the backend locally
+
+```bash
+go run main.go
+```
+
+The API server starts on `http://localhost:8080`.
+
+### 4. Open Swagger UI
+
+```text
+http://localhost:8080/swagger/index.html
+```
+
+### 5. Run tests
+
+```bash
+go test ./...
+```
+
+### 6. Run the React demo client
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The Vite dev server usually starts on `http://localhost:5173`.
+
+## Docker
+
+Run the backend and database stack:
+
+```bash
+# Make sure DB_HOST=db in .env before running the API container.
+docker compose up --build
+```
+
+Stop services while keeping volumes:
+
+```bash
+docker compose down
+```
+
+Remove services and local database/cache volumes:
+
+```bash
+docker compose down -v
+```
+
+## API Examples
+
+See [`docs/API_EXAMPLES.md`](docs/API_EXAMPLES.md) for sample `curl` requests covering registration, login, item creation, listing, purchase, and image upload.
+
+## Project Structure
+
+```text
+.
+├── controllers/        # HTTP handlers and controller tests
+├── database/           # PostgreSQL and Redis initialization
+├── docs/               # Swagger output and project documentation
+├── frontend/           # Lightweight React/Vite demo client
+├── middlewares/        # JWT auth and structured logging middleware
+├── models/             # GORM models
+├── repository/         # Persistence and transaction logic
+├── uploads/            # Uploaded item images during local development
+├── utils/              # Shared utility code
+├── Dockerfile
+├── docker-compose.yml
+└── main.go
+```
+
+## CI
+
+GitHub Actions runs:
+
+```bash
+go build -v ./...
+go test -v ./...
+```
+
+on pushes and pull requests targeting `main` or `master`.
+
+## Current Scope And Limitations
+
+This is a portfolio project focused on backend architecture and practical API behavior, not a production marketplace service. The React app is intentionally small and serves as a demo client. Production hardening work would include stricter CORS settings, external object storage for uploads, secret management, database migration tooling, health checks, retry logic, and deployment configuration.
